@@ -28,13 +28,14 @@
   },
   "homepage": "https://github.com/jeremiahalex/react-chat-app#readme",
   "dependencies": {
-    "express": "^4.14.0",
-    "react": "^15.2.1",
-    "socket.io": "^1.4.8",
     "babel-core": "^6.11.4",
     "babel-loader": "^6.2.4",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-react": "6.11.1",
+    "express": "^4.14.0",
+    "react": "^15.2.1",
+    "react-dom": "^15.2.1",
+    "socket.io": "^1.4.8",
     "webpack": "^1.13.1"
   }
 }
