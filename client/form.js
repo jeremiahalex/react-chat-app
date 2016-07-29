@@ -4,6 +4,7 @@ class Form extends React.Component {
   constructor (props) {
     super(props)
 
+    // Tested implementing the input form state in redux but it seemed like overkill
     this.state = {
       message: ''
     }

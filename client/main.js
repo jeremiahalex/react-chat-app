@@ -1,28 +1,29 @@
+/* global io */
 import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './app'
 import { createStore } from 'redux'
-
-// TODO. should implement immutable to enforce the data mutation restriction
-// import { List, Map } from 'immutable'
+import { Map, List } from 'immutable'
 
 const socket = io(window.location.host)
-// pass initial state to our reducer function
-const chatReducer = (state = {loading: true, status: 'loading', name: null, messages: [], online: '', form: ''}, action) => {
-  switch (action.type) {
-    case 'status':
-      return Object.assign({}, state, { status: action.status, loading: false })      
-      // return {...state, status: action.status }
+const initState = Map({loading: true, status: 'loading', name: null, messages: List(), online: '', form: ''})
+
+// pass initial state to our reducer function as default
+const chatReducer = (state = initState, action) => {
+  action = Map(action)
+  switch (action.get('type')) {
+    case 'status':    
+      return state.merge({status: action.get('status'), loading: false})
     case 'disconnect':
-      return {...state, status: action.status, messages: [], name: null }
+      return state.merge({status: action.get('status'), messages: [], name: null })
     case 'message':
-      return {...state, messages: state.messages.concat([{ ...action.message }]) }
+      return state.merge({messages: state.get('messages').push({ ...action.get('message') }) })
     case 'online':
-      return {...state, online: action.online.concat() }
+      return state.merge({online: action.get('online').concat() })
     case 'name':
-      return {...state, name: action.name.concat() }
+      return state.merge({name: action.get('name').concat() })
     case 'form':
-      return {...state, form: action.form }
+      return state.merge({form: action.get('form') })
     default:
       return state
   }
@@ -36,10 +37,8 @@ const render = () => {
 
 // subscribe to all changes to store and render
 reduxStore.subscribe(() => {
-  console.log('App State: ', reduxStore.getState())
-  // console.log('messages here', reduxStore.getState().messages.constructor)
+  console.log('App State: ', reduxStore.getState().toJS())
   render()
 })
-
 // call render for the first time
 render()

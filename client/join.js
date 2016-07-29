@@ -10,7 +10,6 @@ class Join extends React.Component {
   }
 
   _handleFormSubmit (name) {
-    // console.log('Joining chat with name: ', name)
     this.props.socket.emit('join', { name: name })
     this.props.handleJoin(name)
   }
