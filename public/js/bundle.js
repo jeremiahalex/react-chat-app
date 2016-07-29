@@ -64,24 +64,29 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	// TODO. should implement immutable to enforce the data mutation restriction
+	// import { List, Map } from 'immutable'
+
 	var socket = io(window.location.host);
 	// pass initial state to our reducer function
 	var chatReducer = function chatReducer() {
-	  var state = arguments.length <= 0 || arguments[0] === undefined ? { loading: true, status: 'loading', name: null, messages: [], online: '' } : arguments[0];
+	  var state = arguments.length <= 0 || arguments[0] === undefined ? { loading: true, status: 'loading', name: null, messages: [], online: '', form: '' } : arguments[0];
 	  var action = arguments[1];
 
 	  switch (action.type) {
 	    case 'status':
-	      return Object.assign({}, state, { status: action.status });
+	      return Object.assign({}, state, { status: action.status, loading: false });
 	    // return {...state, status: action.status }
 	    case 'disconnect':
 	      return _extends({}, state, { status: action.status, messages: [], name: null });
 	    case 'message':
-	      return _extends({}, state, { messages: state.messages.concat([{ type: action.message.type, message: action.message.message, from: action.message.from }]) });
+	      return _extends({}, state, { messages: state.messages.concat([_extends({}, action.message)]) });
 	    case 'online':
 	      return _extends({}, state, { online: action.online.concat() });
 	    case 'name':
 	      return _extends({}, state, { name: action.name.concat() });
+	    case 'form':
+	      return _extends({}, state, { form: action.form });
 	    default:
 	      return state;
 	  }
@@ -96,6 +101,7 @@
 	// subscribe to all changes to store and render
 	reduxStore.subscribe(function () {
 	  console.log('App State: ', reduxStore.getState());
+	  // console.log('messages here', reduxStore.getState().messages.constructor)
 	  render();
 	});
 
@@ -21166,13 +21172,13 @@
 
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /* global io */
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } /* global */
 
 
 	var App = function (_React$Component) {
 	  _inherits(App, _React$Component);
 
-	  function App() {
+	  function App(props) {
 	    _classCallCheck(this, App);
 
 	    console.log('constructor');
@@ -21185,10 +21191,13 @@
 	    //   online: ''
 	    // }
 
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(App).call(this, props));
 
 	    _this._handleSend = _this._handleSend.bind(_this);
 	    _this._handleJoin = _this._handleJoin.bind(_this);
+	    // saving the functions to a shorter name
+	    _this._dispatch = props.reduxStore.dispatch;
+	    _this._getState = props.reduxStore.getState;
 	    return _this;
 	  }
 
@@ -21197,55 +21206,55 @@
 	    value: function componentWillMount() {
 	      var _this2 = this;
 
-	      console.log('componentWillMount');
+	      // console.log('componentWillMount')
 
 	      // App connects
 	      this.props.socket.on('connect', function () {
 	        console.log('Connected to Chat Socket');
-	        _this2.props.reduxStore.dispatch({ type: 'status', status: 'connected' });
+	        _this2._dispatch({ type: 'status', status: 'connected' });
 	        // this.setState({ status: 'connected' })
 	      });
 
 	      // App disconnects
 	      this.props.socket.on('disconnect', function () {
-	        console.log('Disconnected from Chat Socket');
+	        // console.log('Disconnected from Chat Socket')
 	        // this.setState({ status: 'disconnected', messages: [], name: null })
-	        _this2.props.reduxStore.dispatch({ type: 'disconnect', status: 'disconnected' });
+	        _this2._dispatch({ type: 'disconnect', status: 'disconnected' });
 	      });
 
 	      // welcome message received from the server
 	      this.props.socket.on('welcome', function (msg) {
-	        console.log('Received welcome message: ', msg);
+	        // console.log('Received welcome message: ', msg)
 	        // enable the form and add welcome message
 	        // this.setState({ messages: this.props.reduxStore.messages.concat([{ type: 'notice', message: msg }]) })
-	        _this2.props.reduxStore.dispatch({ type: 'message', message: { type: 'notice', message: { type: 'notice', message: msg } } });
+	        _this2._dispatch({ type: 'message', message: { type: 'notice', message: msg } });
 	      });
 
 	      // chat message from another user
 	      this.props.socket.on('chat', function (msg) {
-	        console.log('Received message: ', msg);
+	        // console.log('Received message: ', msg)
 	        // this.setState({ messages: this.props.reduxStore.messages.concat([{ type: 'received', message: msg.message, from: msg.user.name }]) })
-	        _this2.props.reduxStore.dispatch({ type: 'message', message: { type: 'received', message: msg.message, from: msg.user.name } });
+	        _this2._dispatch({ type: 'message', message: { type: 'received', message: msg.message, from: msg.user.name } });
 	      });
 
 	      // message received that new user has joined the chat
 	      this.props.socket.on('joined', function (user) {
-	        console.log(user.name + ' joined left the chat.');
+	        // console.log(user.name + ' joined left the chat.')
 	        // this.setState({ messages: this.props.reduxStore.messages.concat([{ type: 'user', message: ' joined the chat.', from: user.name }]) })
-	        _this2.props.reduxStore.dispatch({ type: 'message', message: { type: 'user', message: ' joined the chat.', from: user.name } });
+	        _this2._dispatch({ type: 'message', message: { type: 'user', message: ' joined the chat.', from: user.name } });
 	      });
 
 	      // handle leaving message
 	      this.props.socket.on('left', function (user) {
-	        console.log(user.name + ' left the chat.');
+	        // console.log(user.name + ' left the chat.')
 	        // this.setState({ messages: this.props.reduxStore.messages.concat([{ type: 'user', message: ' left the chat.', from: user.name }]) })
-	        _this2.props.reduxStore.dispatch({ type: 'message', message: { type: 'user', message: ' left the chat.', from: user.name } });
+	        _this2._dispatch({ type: 'message', message: { type: 'user', message: ' left the chat.', from: user.name } });
 	      });
 
 	      // keep track of who is online
 	      this.props.socket.on('online', function (connections) {
 	        var names = '';
-	        console.log('Connections: ', connections);
+	        // console.log('Connections: ', connections)
 	        for (var i = 0; i < connections.length; ++i) {
 	          if (connections[i].user) {
 	            if (names.length > 0) {
@@ -21254,7 +21263,7 @@
 	            names += connections[i].user.name;
 	          }
 	        }
-	        _this2.props.reduxStore.dispatch({ type: 'online', online: names });
+	        _this2._dispatch({ type: 'online', online: names });
 	        // this.setState({ online: names })
 	      });
 	    }
@@ -21262,32 +21271,32 @@
 	    key: '_handleJoin',
 	    value: function _handleJoin(name) {
 	      // this.setState({ name: name })
-	      this.props.reduxStore.dispatch({ type: 'name', name: name });
+	      this._dispatch({ type: 'name', name: name });
 	    }
 	  }, {
 	    key: '_handleSend',
 	    value: function _handleSend(message) {
 	      // this.setState({ messages: this.props.reduxStore.messages.concat([{ type: 'sent', message: message, from: this.props.reduxStore.name }]) })
-	      this.props.reduxStore.dispatch({ type: 'message', message: { type: 'sent', message: message, from: this.props.reduxStore.name } });
+	      this._dispatch({ type: 'message', message: { type: 'sent', message: message, from: this._getState().name } });
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
-	      console.log('render');
-	      var connected = this.props.reduxStore.status === 'connected';
+	      // console.log('render')
+	      var connected = this._getState().status === 'connected';
 	      var classNames = 'label label-default';
-	      if (!this.loading) {
+	      if (!this._getState().loading) {
 	        classNames = connected ? 'label label-success' : 'label label-danger';
 	      }
 
 	      var sectionToShow = void 0;
-	      if (this.props.reduxStore.getState().messages.length === 0 || !this.props.reduxStore.getState().name) {
+	      if (this._getState().messages.length === 0 || !this._getState().name) {
 	        sectionToShow = _react2.default.createElement(_join2.default, _extends({}, this.props, { handleJoin: this._handleJoin }));
 	      } else {
 	        sectionToShow = _react2.default.createElement(_chat2.default, _extends({}, this.props, {
 	          handleSend: this._handleSend,
-	          messages: this.props.reduxStore.getState().messages,
-	          online: this.props.reduxStore.getState().online }));
+	          messages: this._getState().messages,
+	          online: this._getState().online }));
 	      }
 
 	      return _react2.default.createElement(
@@ -21301,7 +21310,7 @@
 	          _react2.default.createElement(
 	            'span',
 	            { id: 'status', className: classNames },
-	            this.props.reduxStore.getState().status
+	            this._getState().status
 	          )
 	        ),
 	        sectionToShow
@@ -21365,11 +21374,9 @@
 	  _createClass(Join, [{
 	    key: '_handleFormSubmit',
 	    value: function _handleFormSubmit(name) {
-	      console.log('Joining chat with name: ', name);
+	      // console.log('Joining chat with name: ', name)
 	      this.props.socket.emit('join', { name: name });
 	      this.props.handleJoin(name);
-	      // asuming it is will be successful so hide the form - could tell the parent to do this instead
-	      this.setState({ isHidden: true });
 	    }
 	  }, {
 	    key: 'render',
@@ -21377,7 +21384,7 @@
 	      return _react2.default.createElement(
 	        'section',
 	        { id: 'join', className: 'well' },
-	        _react2.default.createElement(_form2.default, { handleSubmit: this._handleFormSubmit })
+	        _react2.default.createElement(_form2.default, { handleSubmit: this._handleFormSubmit, reduxStore: this.props.reduxStore })
 	      );
 	    }
 	  }]);
@@ -21418,10 +21425,10 @@
 	var Form = function (_React$Component) {
 	  _inherits(Form, _React$Component);
 
-	  function Form() {
+	  function Form(props) {
 	    _classCallCheck(this, Form);
 
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Form).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Form).call(this, props));
 
 	    _this.state = {
 	      message: ''
@@ -21430,25 +21437,36 @@
 	    // custom functions by default do not have this bound
 	    _this._handleMessageChange = _this._handleMessageChange.bind(_this);
 	    _this._handleSubmit = _this._handleSubmit.bind(_this);
+	    _this._getInputValue = _this._getInputValue.bind(_this);
+	    // this._dispatch = props.reduxStore.dispatch
+	    // this._getState = props.reduxStore.getState
 	    return _this;
 	  }
 
 	  _createClass(Form, [{
 	    key: '_handleMessageChange',
 	    value: function _handleMessageChange(e) {
+	      // this._dispatch({ type: 'form', form: e.target.value })
 	      this.setState({ message: e.target.value });
 	    }
 	  }, {
 	    key: '_handleSubmit',
 	    value: function _handleSubmit(e) {
 	      e.preventDefault();
-	      if (this.state.message.length === 0) return false;
+	      if (this._getInputValue().length === 0) return false;
 
 	      // pass the result to the parent
-	      this.props.handleSubmit(this.state.message);
+	      this.props.handleSubmit(this._getInputValue());
 
 	      // reset the input
+	      // this._dispatch({ type: 'form', form: '' })
 	      this.setState({ message: '' });
+	    }
+	  }, {
+	    key: '_getInputValue',
+	    value: function _getInputValue() {
+	      return this.state.message;
+	      // return this._getState().form
 	    }
 	  }, {
 	    key: 'render',
@@ -21466,12 +21484,12 @@
 	            autoComplete: 'off',
 	            required: true,
 	            autoFocus: true,
-	            value: this.state.message,
+	            value: this._getInputValue(),
 	            onChange: this._handleMessageChange }),
 	          ' ',
 	          _react2.default.createElement(
 	            'button',
-	            { id: 'sendJoin', className: 'btn btn-success', disabled: !this.state.message },
+	            { id: 'sendJoin', className: 'btn btn-success', disabled: !this._getInputValue() },
 	            this.props.buttomLabel
 	          )
 	        )
@@ -21532,11 +21550,12 @@
 	var Chat = function (_React$Component) {
 	  _inherits(Chat, _React$Component);
 
-	  function Chat() {
+	  function Chat(props) {
 	    _classCallCheck(this, Chat);
 
+	    // console.log('messages', props.messages.constructor)
 	    // custom functions by default do not have this bound
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Chat).call(this, props));
 
 	    _this._handleFormSubmit = _this._handleFormSubmit.bind(_this);
 	    return _this;
@@ -21545,7 +21564,7 @@
 	  _createClass(Chat, [{
 	    key: '_handleFormSubmit',
 	    value: function _handleFormSubmit(message) {
-	      console.log('Sending message: ', message);
+	      // console.log('Sending message: ', message)
 	      this.props.socket.emit('chat', message);
 
 	      // pass message to parent
@@ -21560,7 +21579,7 @@
 	        _react2.default.createElement(
 	          'div',
 	          { className: 'panel-heading' },
-	          _react2.default.createElement(_form2.default, { handleSubmit: this._handleFormSubmit, placeholder: 'say what', buttomLabel: 'Send' })
+	          _react2.default.createElement(_form2.default, { handleSubmit: this._handleFormSubmit, placeholder: 'say what', buttomLabel: 'Send', reduxStore: this.props.reduxStore })
 	        ),
 	        _react2.default.createElement(
 	          'section',

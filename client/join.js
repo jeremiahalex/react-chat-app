@@ -10,17 +10,15 @@ class Join extends React.Component {
   }
 
   _handleFormSubmit (name) {
-    console.log('Joining chat with name: ', name)
+    // console.log('Joining chat with name: ', name)
     this.props.socket.emit('join', { name: name })
     this.props.handleJoin(name)
-    // asuming it is will be successful so hide the form - could tell the parent to do this instead
-    this.setState({isHidden: true})
   }
 
   render () {
     return (
     <section id="join" className="well">
-      <Form handleSubmit={this._handleFormSubmit} />
+      <Form handleSubmit={this._handleFormSubmit} reduxStore={this.props.reduxStore} />
     </section>
     )
   }

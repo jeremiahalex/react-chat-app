@@ -1,8 +1,8 @@
 import React from 'react'
 
 class Form extends React.Component {
-  constructor () {
-    super()
+  constructor (props) {
+    super(props)
 
     this.state = {
       message: ''
@@ -11,21 +11,31 @@ class Form extends React.Component {
     // custom functions by default do not have this bound
     this._handleMessageChange = this._handleMessageChange.bind(this)
     this._handleSubmit = this._handleSubmit.bind(this)
+    this._getInputValue = this._getInputValue.bind(this)
+    // this._dispatch = props.reduxStore.dispatch
+    // this._getState = props.reduxStore.getState
   }
 
   _handleMessageChange (e) {
+    // this._dispatch({ type: 'form', form: e.target.value })
     this.setState({message: e.target.value})
   }
 
   _handleSubmit (e) {
     e.preventDefault()
-    if (this.state.message.length === 0) return false
+    if (this._getInputValue().length === 0) return false
 
     // pass the result to the parent
-    this.props.handleSubmit(this.state.message)
+    this.props.handleSubmit(this._getInputValue())
 
     // reset the input
+    // this._dispatch({ type: 'form', form: '' })
     this.setState({message: ''})
+  }
+
+  _getInputValue() {
+    return this.state.message
+    // return this._getState().form
   }
 
   render () {
@@ -39,10 +49,10 @@ class Form extends React.Component {
           autoComplete="off"
           required
           autoFocus
-          value={this.state.message}
+          value={this._getInputValue()}
           onChange={this._handleMessageChange} />
         {' '}
-        <button id="sendJoin" className="btn btn-success" disabled={!this.state.message}>
+        <button id="sendJoin" className="btn btn-success" disabled={!this._getInputValue()}>
           {this.props.buttomLabel}
         </button>
       </fieldset>
